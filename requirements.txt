@@ -1,8 +1,5 @@
 streamlit
 pandas
 PyPDF2
-requests
 aiohttp
-asyncio
-tqdm
 openpyxl
