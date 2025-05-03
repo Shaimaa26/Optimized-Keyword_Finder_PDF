@@ -7,6 +7,13 @@ import asyncio
 import aiohttp
 from concurrent.futures import ProcessPoolExecutor
 import tempfile
+import multiprocessing
+
+# 💡 Fix for multiprocessing in Streamlit
+multiprocessing.set_start_method("spawn", force=True)
+
+from pdf_utils import extract_keywords_from_pdf
+
 
 # --- Setup
 st.set_page_config(page_title="Fast PDF Keyword Extractor", layout="centered")
