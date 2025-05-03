@@ -5,15 +5,8 @@ import streamlit as st
 from io import BytesIO
 import asyncio
 import aiohttp
-from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import ThreadPoolExecutor
 import tempfile
-import multiprocessing
-
-# 💡 Fix for multiprocessing in Streamlit
-multiprocessing.set_start_method("spawn", force=True)
-
-from pdf_utils import extract_keywords_from_pdf
-
 
 # --- Setup
 st.set_page_config(page_title="Fast PDF Keyword Extractor", layout="centered")
@@ -38,7 +31,7 @@ def generate_sample_excel():
 st.markdown("### 📄 Download Sample Excel File")
 st.download_button("📥 Download Sample Template", generate_sample_excel(), "sample_template.xlsx")
 
-# --- PDF Downloader (Async)
+# --- Async PDF Downloader
 async def download_pdf(session, url, path):
     try:
         async with session.get(url, timeout=30) as resp:
@@ -58,7 +51,7 @@ async def batch_download_pdfs(urls, folder):
             tasks.append(download_pdf(session, url, path))
         return await asyncio.gather(*tasks)
 
-# --- PDF Parser (Parallel)
+# --- PDF Keyword Extractor
 def extract_keywords_from_pdf(args):
     path, url, keywords = args
     try:
@@ -105,14 +98,14 @@ if excel_file:
             success_count = sum(1 for success, _ in download_results)
             st.success(f"✅ {success_count}/{len(urls)} PDFs downloaded.")
 
-            # Prepare for multiprocessing
+            # Prepare for parallel processing
             st.info("🧠 Extracting keywords from PDFs...")
             input_data = []
             for idx, (success, url) in enumerate(download_results):
                 if success:
                     input_data.append((os.path.join(temp_dir, f"{idx}.pdf"), url, keywords))
 
-            with ProcessPoolExecutor() as executor:
+            with ThreadPoolExecutor() as executor:
                 all_results = list(executor.map(extract_keywords_from_pdf, input_data))
 
             flat_results = [r for group in all_results for r in group]
